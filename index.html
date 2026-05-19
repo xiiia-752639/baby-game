@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字感器：大人語言轉譯手冊</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0d1b2a; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+        }
+
+        .game-container {
+            position: relative;
+            height: 100vh;
+            aspect-ratio: 3 / 4; 
+            max-width: 100vw; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); 
+        }
+
+        .wood-bg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+            display: none;
+            transition: filter 0.5s ease; 
+        }
+
+        .page-img {
+            width: 100%; height: 100%; object-fit: contain; pointer-events: none;
+            display: none; position: relative; z-index: 2;
+        }
+        .page-img.active { display: block; }
+
+        .start-btn {
+            position: absolute; top: 40%; left: 30%; width: 40%; height: 35%;
+            cursor: pointer; background-color: transparent; border: none; z-index: 10;
+        }
+
+        /* 木屋前導文字 */
+        .wood-text {
+            display: none; width: 75%; color: #ffffff; font-size: 14px; 
+            line-height: 1.8; text-align: center; letter-spacing: 1.5px;
+            z-index: 5; text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8); 
+        }
+
+        /* 便條紙容器 */
+        .memo-container {
+            display: none; position: absolute; width: 90%; height: 85%; z-index: 5; top: 7%; left: 5%;
+        }
+        .memo-pad {
+            position: absolute; width: 120px; height: 120px; box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2); 
+            padding: 12px; box-sizing: border-box; display: flex; justify-content: center; align-items: center;
+            text-align: center; font-size: 14px; font-weight: bold; color: #333; line-height: 1.4; border-radius: 2px;
+        }
+
+        /* 【新關卡】決策畫面容器 */
+        .decision-container {
+            display: none; position: absolute; width: 85%; z-index: 8;
+            flex-direction: column; align-items: center; text-align: center;
+        }
+
+        /* 對話框樣式 */
+        .dialog-bubble {
+            background-color: white; color: #333; padding: 20px 30px; border-radius: 20px;
+            font-size: 16px; font-weight: bold; margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative;
+        }
+        /* 對話框小箭頭 */
+        .dialog-bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+            border-left: 10px solid transparent; border-right: 10px solid transparent;
+            border-top: 10px solid white;
+        }
+
+        /* 旁白與問句文字 */
+        .narrative-text {
+            color: white; font-size: 16px; /* 14pt */ line-height: 1.6;
+            margin-bottom: 20px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+        }
+
+        /* 按鈕容器 */
+        .btn-group {
+            width: 100%; display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
+        }
+
+        /* 決策按鈕樣式 */
+        .choice-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid white; color: white; padding: 15px 20px;
+            border-radius: 50px; font-size: 16px; cursor: pointer;
+            transition: all 0.3s ease; backdrop-filter: blur(5px);
+        }
+        .choice-btn:hover { background-color: white; color: #4a3525; }
+        .choice-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="gameContainer">
+        <div class="wood-bg-layer" id="woodBgLayer"></div>
+
+        <img src="cover.jpg" alt="首頁" class="page-img active" id="imgCover">
+        <img src="page1.jpg" alt="故事一" class="page-img" id="imgPage1">
+        <img src="page2.jpg" alt="故事二" class="page-img" id="imgPage2">
+
+        <div class="wood-text" id="woodText">
+            走進森林沒多久，你看見了一間小木屋。<br><br>
+            門是開著的。<br><br>
+            你走進去，看見牆上貼滿了便條紙。<br>
+            像是有人把整個人生的待辦事項全貼在這裡。
+        </div>
+
+        <div class="memo-container" id="memoContainer"></div>
+
+        <div class="decision-container" id="decisionContainer">
+            <div class="dialog-bubble">……這些是任務，還是許願？</div>
+            <div class="narrative-text">
+                旁邊那個小東西歪著頭看了很久，<br>
+                拔出奶嘴看向你問。
+            </div>
+            <div class="narrative-text">你說你也不知道。你決定──</div>
+            <div class="btn-group">
+                <button class="choice-btn" onclick="makeChoice(1)">在這裡也貼上便條紙</button>
+                <button class="choice-btn" onclick="makeChoice(2)">把這些便條紙通通撕下來</button>
+            </div>
+        </div>
+
+        <button class="start-btn" id="startBtn"></button>
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+        const imgCover = document.getElementById('imgCover');
+        const imgPage1 = document.getElementById('imgPage1');
+        const imgPage2 = document.getElementById('imgPage2');
+        const woodBgLayer = document.getElementById('woodBgLayer');
+        const woodText = document.getElementById('woodText');
+        const memoContainer = document.getElementById('memoContainer');
+        const decisionContainer = document.getElementById('decisionContainer');
+        const startBtn = document.getElementById('startBtn');
+        const gameContainer = document.getElementById('gameContainer');
+
+        let currentStage = "cover";
+
+        const memoTexts = [
+            "要結婚<br>成家立業", "找到一份好工作賺大錢", "生個孩子<br>傳宗接代", "考研究所<br>拚個好文憑", "在市中心買一間自己的房子"
+        ], memoColors = ["#fff9db", "#e8f7ff", "#ffe8f1", "#f0fff0", "#fff0f5"]; 
+
+        startBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            imgCover.classList.remove('active');
+            imgPage1.classList.add('active');
+            startBtn.style.display = 'none';
+            document.body.style.backgroundColor = "#6b7e5f"; 
+            currentStage = "page1";
+        });
+
+        gameContainer.addEventListener('click', function() {
+            if (currentStage === "page1") {
+                imgPage1.classList.remove('active');
+                imgPage2.classList.add('active');
+                currentStage = "page2";
+            } 
+            else if (currentStage === "page2") {
+                imgPage2.classList.remove('active');
+                woodBgLayer.style.backgroundImage = "url('wood.png')";
+                woodBgLayer.style.display = "block";
+                woodBgLayer.style.filter = "brightness(40%)";
+                woodText.style.display = 'block';
+                currentStage = "wood_intro";
+            } 
+            else if (currentStage === "wood_intro") {
+                woodText.style.display = 'none';
+                woodBgLayer.style.filter = "brightness(100%)";
+                memoContainer.style.display = 'block';
+                generateMemos();
+                currentStage = "memo_wall";
+            }
+            else if (currentStage === "memo_wall") {
+                // 從便條紙牆點擊進入決策畫面
+                memoContainer.style.display = 'none';
+                woodBgLayer.style.filter = "brightness(40%)";
+                decisionContainer.style.display = 'flex';
+                currentStage = "making_decision";
+            }
+        });
+
+        function generateMemos() {
+            memoContainer.innerHTML = "";
+            const regions = [{t: 8, l: 8}, {t: 12, l: 56}, {t: 38, l: 32}, {t: 62, l: 10}, {t: 65, l: 54}];
+            regions.sort(() => Math.random() - 0.5);
+            memoTexts.forEach((text, index) => {
+                const memo = document.createElement('div');
+                memo.className = 'memo-pad'; memo.innerHTML = text;
+                const randomDeg = Math.floor(Math.random() * 16) - 8; 
+                memo.style.top = regions[index].t + "%";
+                memo.style.left = regions[index].l + "%";
+                memo.style.transform = `rotate(${randomDeg}deg)`;
+                memo.style.backgroundColor = memoColors[index % memoColors.length]; 
+                memoContainer.appendChild(memo);
+            });
+        }
+
+        // 處理使用者的選擇
+	function makeChoice(choiceId) {
+	    // 防止點擊按鈕時觸發背景的 click 事件
+ 	   event.stopPropagation();
+    
+ 	   // 透過網址把選擇傳給新網頁 (choice=1 代表貼上，choice=2 代表撕下)
+ 	   window.location.href = 'choices.html?choice=' + choiceId;
+	}
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字感器：大人語言轉譯手冊 - 選擇結果</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0d1b2a; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+        }
+
+        .game-container {
+            position: relative;
+            height: 100vh;
+            aspect-ratio: 3 / 4; 
+            max-width: 100vw; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); 
+        }
+
+        .wood-bg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('wood.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: brightness(40%); 
+            z-index: 1;
+        }
+
+        .story-text {
+            position: relative;
+            width: 75%;
+            color: #ffffff; 
+            font-size: 14px; 
+            font-weight: normal;
+            line-height: 1.8;
+            text-align: center;
+            letter-spacing: 1.5px;
+            z-index: 5;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+            cursor: pointer; 
+        }
+
+        /* 讓道具獲得的文字稍微帶點可愛的強調感（可視需求自行微調） */
+        .item-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff; /* 淡淡的亮色，讓道具看起來像發光 */
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="gameContainer">
+        <div class="wood-bg-layer"></div>
+
+        <div class="story-text" id="storyTextField"></div>
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+        const storyTextField = document.getElementById('storyTextField');
+        const gameContainer = document.getElementById('gameContainer');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const userChoice = urlParams.get('choice');
+
+        let textSegments = [];
+        let itemObtained = "";
+
+        // 重新編排文本，嚴格限制只有「兩頁」點擊
+        if (userChoice === '1') {
+            textSegments = [
+                // 第一頁：完整故事
+                "你想了很久，寫下一件事。<br>不確定是夢想還是壓力，但寫下來之後，<br>感覺心裡好像稍微輕了一點點。<br><br>「你很棒。」<br>說這話的是旁邊那個小東西。<br><br>你沒有問他是什麼意思。<br>你們繼續往前走了。",
+                // 第二頁：道具獲得
+                "<span class='item-text'>✨ 獲得道具：粉色奶嘴 ✨</span>"
+            ];
+            itemObtained = "粉色奶嘴";
+        } else {
+            textSegments = [
+                // 第一頁：完整故事
+                "你一張一張撕下來，撕得很乾淨。<br>牆壁空了，反而有點好看。<br><br>旁邊那個小東西看著你，<br>像是在問你確定嗎？<br><br>你確定。<br><br>有些東西不需要一直貼在那裡提醒你，<br>只要自己知道就好。<br><br>你們繼續往前走了。",
+                // 第二頁：道具獲得
+                "<span class='item-text'>✨ 獲得道具：綠色奶嘴 ✨</span>"
+            ];
+            itemObtained = "綠色奶嘴";
+        }
+
+        let currentTextIndex = 0;
+
+        function initStory() {
+            if (textSegments.length > 0) {
+                storyTextField.innerHTML = textSegments[currentTextIndex];
+            }
+        }
+
+        gameContainer.addEventListener('click', function() {
+            currentTextIndex++;
+            
+            if (currentTextIndex < textSegments.length) {
+                // 切換到第二頁（道具畫面）
+                storyTextField.innerHTML = textSegments[currentTextIndex];
+            } else {
+                // 兩頁都點完後，正式存入後台記憶體
+                localStorage.setItem('user_item', itemObtained);
+                
+                alert(`系統已悄悄記住你擁有的道具：${localStorage.getItem('user_item')}！即將前往下一關...`);
+                
+                // 這裡可以接下一個森林場景的檔案，例如：
+                window.location.href = 'cockpit_choice.html';
+            }
+        });
+
+        initStory();
+    </script>
+
+</body>
+</html>

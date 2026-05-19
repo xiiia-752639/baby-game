@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字感器：大人語言轉譯手冊 - 抉擇大道</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #0d1b2a; 
+            display: flex; justify-content: center; align-items: center;
+            -webkit-user-select: none; user-select: none;
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+        }
+
+        /* 遊戲主容器 */
+        .game-container {
+            position: relative;
+            height: 100vh;
+            aspect-ratio: 3 / 4; 
+            max-width: 100vw; 
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        .stage-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        /* ================= 階段一：駕駛艙樣式 ================= */
+        .bg-inside {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('cockpit_inside.png');
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            filter: brightness(60%); 
+            z-index: 1;
+        }
+
+        .img-outside {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('cockpit_outside.png');
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            z-index: 2;
+            transition: opacity 0.3s ease;
+            pointer-events: none; 
+        }
+        .img-outside.hidden { opacity: 0; }
+
+        .narration-box {
+            position: absolute; 
+            top: 10%; 
+            left: 5%;
+            width: 90%;
+            color: #ffffff; 
+            font-size: 14px; 
+            line-height: 1.8;
+            text-align: center; 
+            letter-spacing: 1.5px; 
+            z-index: 5;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8); 
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        .click-area {
+            position: absolute; 
+            bottom: 12%; 
+            left: 15%;
+            width: 70%;  
+            height: 38%; 
+            z-index: 10; 
+            cursor: pointer;
+            border-radius: 50%; 
+        }
+
+        .next-stage-btn {
+            display: none; 
+            position: absolute; 
+            bottom: 6%;
+            left: 50%;
+            transform: translateX(-50%); 
+            background-color: rgba(255, 255, 255, 0.9); color: #333;
+            border: none; padding: 12px 30px; border-radius: 50px;
+            font-size: 14px; font-weight: bold; cursor: pointer; 
+            z-index: 15; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: background-color 0.3s, transform 0.2s;
+            white-space: nowrap;
+        }
+        .next-stage-btn:hover { background-color: #ffffff; transform: translateX(-50%) scale(1.05); }
+
+        /* ================= 階段二：滑動方塊抉擇樣式 ================= */
+        .choice-stage-view {
+            display: none; position: absolute; top:0; left:0; width:100%; height:100%;
+            background-color: #8fa4b4; z-index: 20;
+            justify-content: center; align-items: center;
+        }
+
+        .result-bg-image {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background-image: url('page8.jpg');
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            z-index: 21; display: none;
+        }
+
+        .slider-panel {
+            position: absolute; 
+            width: 78%; 
+            height: 45%; 
+            top: 27.5%; 
+            left: 11%;
+            background-color: white; border-radius: 24px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 25px 20px; box-sizing: border-box; z-index: 25;
+            transition: top 0.6s cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+
+        .slider-main-title {
+            color: #333; font-size: 18px; font-weight: bold; text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .slider-sub-title {
+            color: #444; font-size: 14px; font-weight: normal; text-align: center; line-height: 1.5;
+        }
+
+        .slider-track {
+            position: relative; width: 60px; height: 160px; 
+            background-color: #e0e7ec; border-radius: 30px;
+            margin: 10px 0;
+            display: flex; justify-content: center; align-items: center; 
+        }
+
+        .slider-handle {
+            position: absolute; width: 50px; height: 50px;
+            background-color: #556b7d; border-radius: 50%; cursor: grab;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .slider-handle:active { cursor: grabbing; background-color: #3d5162; }
+        .slider-handle::after { content: '↕'; color: white; font-weight: bold; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="gameContainer">
+        
+        <div id="stageExploration" class="stage-wrapper" style="z-index:5;">
+            <div class="bg-inside"></div>
+            <div class="img-outside" id="imgOutside"></div>
+            
+            <div class="narration-box">
+                離開小木屋，你站在一條寬闊的路上。<br>
+                這條路和你想像的森林不太一樣，<br>
+                它很熱鬧、很吵、很亮。<br>
+                路上有各種奇怪的交通工具呼嘯而過，<br>
+                每一台看起來都很厲害。<br>
+                旁邊那個小東西的眼睛亮了.
+            </div>
+            
+            <div class="click-area" id="cockpitTrigger"></div>
+            <button class="next-stage-btn" id="nextStageBtn">查看完成，進入選擇</button>
+        </div>
+
+        <div class="choice-stage-view" id="stageChoice">
+            <div class="result-bg-image" id="resultBgImage"></div>
+
+            <div class="slider-panel" id="sliderPanel">
+                <div class="slider-main-title">你決定──</div>
+                
+                <div class="slider-sub-title">還是不了，走路就好（向上滑動）</div>
+                
+                <div class="slider-track" id="sliderTrack">
+                    <div class="slider-handle" id="sliderHandle"></div>
+                </div>
+                
+                <div class="slider-sub-title">搭上其中一台（向下滑動）</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+        const imgOutside = document.getElementById('imgOutside');
+        const cockpitTrigger = document.getElementById('cockpitTrigger');
+        const nextStageBtn = document.getElementById('nextStageBtn');
+        const stageExploration = document.getElementById('stageExploration');
+        const stageChoice = document.getElementById('stageChoice');
+        const resultBgImage = document.getElementById('resultBgImage');
+        const sliderPanel = document.getElementById('sliderPanel');
+        const sliderHandle = document.getElementById('sliderHandle');
+        const sliderTrack = document.getElementById('sliderTrack');
+
+        let hasSwitched = false;
+
+        cockpitTrigger.addEventListener('click', function(e) {
+            e.stopPropagation(); 
+            imgOutside.classList.toggle('hidden');
+            hasSwitched = true;
+            nextStageBtn.style.display = 'block';
+        });
+
+        nextStageBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            stageExploration.style.display = 'none';
+            stageChoice.style.display = 'flex';
+        });
+
+        let isDragging = false;
+        let startY = 0;
+        let startTop = 0;
+        let hasSlid = false; 
+
+        // 🔥 改用實體量尺，由瀏覽器動態抓取最精準的像素距離
+        let tHeight = 160;
+        let hHeight = 50;
+        let centerTop = 55;
+        let maxDrag = 110;
+
+        function startDrag(yPosition) {
+            if (hasSlid) return;
+            isDragging = true;
+            startY = yPosition;
+            
+            // 🔥 在點下去的瞬間，精準取得軌道和按鈕的實體高度來更新極限值
+            tHeight = sliderTrack.getBoundingClientRect().height;
+            hHeight = sliderHandle.getBoundingClientRect().height;
+            centerTop = (tHeight - hHeight) / 2;
+            maxDrag = tHeight - hHeight; // 算出來是多少像素，就是多少像素！
+
+            sliderHandle.style.top = sliderHandle.offsetTop + 'px';
+            startTop = sliderHandle.offsetTop; 
+            sliderHandle.style.transition = 'none';
+        }
+
+        function doDrag(yPosition) {
+            if (!isDragging || hasSlid) return;
+            const deltaY = yPosition - startY;
+            let newTop = startTop + deltaY;
+
+            // 絕對限制在實體邊界內
+            if (newTop < 0) newTop = 0;
+            if (newTop > maxDrag) newTop = maxDrag;
+
+            sliderHandle.style.top = newTop + 'px';
+        }
+
+        function endDrag() {
+            if (!isDragging || hasSlid) return;
+            isDragging = false;
+            const currentTop = sliderHandle.offsetTop;
+
+            if (currentTop < centerTop - 20) {
+                hasSlid = true;
+                sliderHandle.style.transition = 'top 0.2s ease';
+                sliderHandle.style.top = '0px'; 
+                triggerResult('up', '橘色奶嘴');
+            } 
+            else if (currentTop > centerTop + 20) {
+                hasSlid = true;
+                sliderHandle.style.transition = 'top 0.2s ease';
+                sliderHandle.style.top = maxDrag + 'px'; // 彈定到實體最底部內壁
+                triggerResult('down', '藍色奶嘴');
+            } 
+            else {
+                sliderHandle.style.transition = 'top 0.2s ease';
+                sliderHandle.style.top = centerTop + 'px';
+            }
+        }
+
+        sliderHandle.addEventListener('mousedown', e => startDrag(e.clientY));
+        window.addEventListener('mousemove', e => doDrag(e.clientY));
+        window.addEventListener('mouseup', endDrag);
+
+        sliderHandle.addEventListener('touchstart', e => startDrag(e.touches[0].clientY));
+        window.addEventListener('touchmove', e => doDrag(e.touches[0].clientY), { passive: false });
+        window.addEventListener('touchend', endDrag);
+
+        function triggerResult(direction, itemName) {
+            resultBgImage.style.display = 'block';
+
+            if (direction === 'up') {
+                sliderPanel.style.top = '2%'; 
+            } else {
+                sliderPanel.style.top = '53%'; 
+            }
+
+            localStorage.setItem('user_item_2', itemName);
+
+            setTimeout(() => {
+                alert(`系統已記錄第二項道具：${localStorage.getItem('user_item_2')}！`);
+            }, 500);
+        }
+    </script>
+
+</body>
+</html>
